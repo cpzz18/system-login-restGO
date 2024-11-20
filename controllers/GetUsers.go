@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"encoding/json"
 	"myapi/config"
 	"myapi/models"
+	"myapi/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -14,17 +14,13 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	var users []models.Register
 
-	err := config.DB.Find(&users).Error
-	if err != nil {
-		w.WriteHeader(500)
-		resp, _ := json.Marshal(map[string]string{"status": "failed"})
-		w.Write(resp)
-		return
+	if err := config.DB.Find(&users).Error; err != nil {
+		utils.RespondError(w, http.StatusInternalServerError, "user not found")
 	}
-	resp, _ := json.Marshal(&users)
+	utils.RespondJson(w, http.StatusOK, map[string]interface{} {
+		"data": users,
+	})
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
@@ -36,13 +32,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	//inisiasi user dan lakukan pencarian bedasarkan url
 	var users models.Register
 	if err := config.DB.First(&users, "id = ?", id).Error; err != nil {
-		http.Error(w, "User not found", http.StatusInternalServerError)
+		utils.RespondError(w, http.StatusNotFound, "user not found{id}")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, `{"status": "failed to encode users"}`, http.StatusInternalServerError)
-	}
+	utils.RespondJson(w, http.StatusOK, map[string]interface{} {
+		"data": users,
+	})
 
 }

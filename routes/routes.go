@@ -12,8 +12,8 @@ import (
 
 func Route() {
 	r := mux.NewRouter()
-	r.HandleFunc("/login", controllers.LoginUser).Methods("POST")
 	r.HandleFunc("/register", controllers.RegisterUser).Methods("POST")
+	r.HandleFunc("/login", controllers.LoginUser).Methods("POST")
 	r.HandleFunc("/users", controllers.GetUsers).Methods("GET")
 	r.HandleFunc("/users/{id}", controllers.GetUser).Methods("GET")
 	r.HandleFunc("/users/{id}", controllers.UpdateUser).Methods("PUT")

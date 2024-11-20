@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"encoding/json"
 	"myapi/config"
 	"myapi/models"
+	"myapi/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -16,14 +16,18 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	var users models.Register
 	if err := config.DB.First(&users, id).Error; err != nil {
-		http.Error(w, "User not found", http.StatusInternalServerError)
-	}
-	
-	if err := config.DB.Delete(&users, id).Error; err != nil {
-		http.Error(w, "failed to delete", http.StatusInternalServerError)
+		utils.RespondError(w,  http.StatusNotFound, "id not found")
 		return
 	}
 
-	json.NewEncoder(w).Encode(users)
-	w.WriteHeader(http.StatusNoContent)
+
+	if err := config.DB.Delete(&users, id).Error; err != nil {
+		utils.RespondError(w, http.StatusInternalServerError, "delete failed")
+		return
+	}
+
+	utils.RespondJson(w, http.StatusOK, map[string]interface{} {
+		"message" : "user succesfuly deleted",
+		"data" : users,
+	})
 }
