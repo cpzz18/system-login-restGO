@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"myapi/config"
 	"myapi/models"
+	"myapi/utils"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -16,22 +17,28 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var login models.Credentials
 
 	if err := json.NewDecoder(r.Body).Decode(&login); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		utils.RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	var user models.Register
 	if err := config.DB.Where("email = ?", login.Email).First(&user).Error; err != nil {
-		http.Error(w, "User not Found", http.StatusNotFound)
+		utils.RespondError(w, http.StatusUnauthorized, "invalid email or password")
 		return
 	}
 	
-
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password)); err != nil {
-		http.Error(w, "Invalid Password", http.StatusUnauthorized)
+		utils.RespondError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Login Success"})
+	
+
+	utils.RespondJson(w, http.StatusOK, map[string]interface{} {
+		"message": "login successful",
+		"data": map[string]interface{} {
+			"name": user.Username,
+			"email": user.Email,
+		},
+	})
 }
