@@ -26,18 +26,22 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		utils.RespondError(w, http.StatusUnauthorized, "invalid email or password")
 		return
 	}
-	
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password)); err != nil {
 		utils.RespondError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
-	
+	token, err := utils.GenerateToken(user.Email)
+	if err != nil {
+		utils.RespondError(w, http.StatusInternalServerError, "failed to generate token")
+	}
 
-	utils.RespondJson(w, http.StatusOK, map[string]interface{} {
-		"message": "login successful",
-		"data": map[string]interface{} {
-			"name": user.Username,
+	utils.RespondJson(w, http.StatusOK, map[string]interface{}{
+		"message": "login successfully",
+		"token": token,
+		"data": map[string]interface{}{
+			"name":  user.Username,
 			"email": user.Email,
 		},
 	})
