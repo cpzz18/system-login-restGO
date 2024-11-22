@@ -58,6 +58,7 @@ To register a new user, send a POST request to /register with the following JSON
 
 ```bash
 {
+  "username": "username",
   "email": "user@example.com",
   "password": "password123"
 }
