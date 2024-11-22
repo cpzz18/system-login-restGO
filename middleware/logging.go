@@ -2,13 +2,14 @@ package middleware
 
 import (
 	"log"
-	_"myapi/utils"
+	"myapi/utils"
 	"net/http"
-	_"strings"
+	"strings"
 
-	_"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt"
 
 )
+var BlacklistToken = make(map[string]bool)
 
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,37 +19,46 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// func ValidateToken(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		// Ambil token dari header Authorization
-// 		authHeader := r.Header.Get("Authorization")
-// 		if authHeader == "" {
-// 			utils.RespondError(w, http.StatusUnauthorized, "Missing Authorization Header")
-// 			return
-// 		}
 
-// 		// format header sesuai dengan 'Bearer <token>'
-// 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-// 		if tokenString == authHeader {
-// 			utils.RespondError(w, http.StatusUnauthorized, "Invalid Authorization Header")
-// 			return
-// 		}
+func IsBlacklistToken(token string) bool {
+	return BlacklistToken[token]
+}
 
-// 		// Parse dan verifikasi token
-// 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-// 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-// 				return nil, http.ErrAbortHandler 
-// 			}
-// 			// Kembalikan secret key untuk verifikasi token
-// 			return []byte(utils.SecretKey), nil
-// 		})
+func ValidateToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ambil token dari header Authorization
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			utils.RespondError(w, http.StatusUnauthorized, "Missing Authorization Header")
+			return
+		}
 
-		
-// 		if err != nil || !token.Valid {
-// 			utils.RespondError(w, http.StatusUnauthorized, "Invalid token")
-// 			return
-// 		}
+		// format header sesuai dengan 'Bearer <token>'
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			utils.RespondError(w, http.StatusUnauthorized, "Invalid Authorization Header")
+			return
+		}
 
-// 		next.ServeHTTP(w, r)
-// 	})
-// }
+		if IsBlacklistToken(tokenString) {
+			utils.RespondError(w, http.StatusUnauthorized, "Token has been blacklisted")
+			return
+		}
+
+		// Parse dan verifikasi token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, http.ErrAbortHandler
+			}
+			// Kembalikan secret key untuk verifikasi token
+			return []byte(utils.SecretKey), nil
+		})
+
+		if err != nil || !token.Valid {
+			utils.RespondError(w, http.StatusUnauthorized, "Invalid token")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
