@@ -32,10 +32,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err := config.DB.Model(&users).Updates(users).Error; err != nil {
 		utils.RespondError(w, http.StatusInternalServerError, "Failed to update user")
 	}
-
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		utils.RespondError(w, http.StatusInternalServerError, "Failed to encode user")
-	}
 	
 	utils.RespondJson(w, http.StatusOK, map[string]interface{} {
 		"message": "User updated successfully",
